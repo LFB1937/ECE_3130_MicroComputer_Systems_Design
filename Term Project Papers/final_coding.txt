@@ -1,0 +1,1872 @@
+/*****************************************************************************
+    Title:  	Microcomp_Program_Code.c
+	Author:		Derek Harper, Coy Bryant, Lewis Bates, Kallen Bullock                                                                              
+	Purpose:	The purpose of this program is to create a locking 
+			program that takes in and creates passwords the 
+			user will have to use to activate the "yay" scenario.
+			If the user puts in the wrong password the buzzer will
+			go off and give the user the "boo" scenario. 
+*****************************************************************************/
+/**
+******************************************************************************
+* @file : main.c
+* @brief : Main program body
+******************************************************************************
+* @attention
+*
+* Copyright (c) 2022 STMicroelectronics.
+* All rights reserved.
+*
+* This software is licensed under terms that can be found in the LICENSE file
+* in the root directory of this software component.
+* If no LICENSE file comes with this software, it is provided AS-IS.
+*
+******************************************************************************
+*/
+
+/* Includes ------------------------------------------------------------------*/
+#include "main.h"
+void SystemClock_Config(void);
+
+/**
+* @brief The application entry point.
+* @retval int
+*/
+
+//Function Prototypes
+void Write_String_LCD(char*);
+void Write_Char_LCD(uint8_t);
+void Write_Instr_LCD(uint8_t);
+void LCD_nibble_write(uint8_t, uint8_t);
+void Write_SR_LCD(uint8_t);
+void Delay(unsigned int);
+void Init_LED0(void);
+void Init_buzzer(void);
+void Begin(void);
+void Enter(int);
+void Write_SR_7S(uint8_t, uint8_t);
+void Write_7Seg(uint8_t, uint8_t);	
+void Init_7Seg(void);	
+void Clear_7Seg(void);
+void Pass_7Seg(void);
+void Fail_7Seg(void);
+void LCD_Init(void);
+void Keypad_Init(void);
+uint8_t Read_Keypad(void);
+
+//Universal Variables
+int Seg_Digit1, Seg_Digit2, Seg_Digit3, Seg_Digit4;//
+int pin1 = 2023;
+int pin2 = 6269;
+int pin3 = 2580;
+int pin4 = 1234;
+int pin5 = 6969;
+int pin6 = 8008;
+int input;
+static int master;
+
+/****************************************************************************
+    Title:          main()
+  	Parameters:     return - integer    argument is void
+	Purpose:	    This function is the digtal lock using all the other 
+                    functions as healper functions. 
+****************************************************************************/
+int main(void)
+{
+	/* MCU Configuration--------------------------------------------------------*/
+
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
+	/* Configure the system clock */
+	SystemClock_Config();
+
+	/* Initialize all configured peripherals */
+	LCD_Init();
+	Init_LED0();
+	Init_buzzer();
+	Keypad_Init();
+	Init_7Seg();
+
+	while (1)
+		{
+			Write_Instr_LCD(0x01);
+			char* line1;
+			line1 = "Digital Lock"; 
+			char* line2; 									// This group of code displays the beginning message to the LCD
+			line2 = "Enter PIN: ";
+			Write_String_LCD(line1);
+			Write_Instr_LCD(0xc0);
+			Write_String_LCD(line2);
+			Begin();
+		}
+}
+
+/****************************************************************************
+    Title:  	    Begin()                                            
+  	Parameters:     returns and takes in no parameters                                  
+	Purpose:        This function is the security checker for the lock. 
+****************************************************************************/
+void Begin()
+{
+	int end; // Controls the while loop
+	end = 0;
+
+	int count; // Determines which digit to change
+	count = 1;
+	
+	// Displaying blanks for 7 Segment's PASS/FAIL indication //
+	
+	Clear_7Seg();
+
+	int Digit1;
+	Digit1 = 0;
+	int Digit2;
+	Digit2 = 0; // Digits the user inputs into the lock keypad
+	int Digit3;
+	Digit3 = 0;
+	int Digit4;
+	Digit4 = 0;
+	
+	int user_Num = -1;
+
+	while(end == 0) // While loop to read the 4 digit passcode from the user
+	{
+		input = 0;
+		uint8_t temp;
+		temp = 0;
+		temp = Read_Keypad();
+		if(temp<=9)
+		{
+			
+			if (count == 1)
+			{
+				Write_Char_LCD(temp+0x30);
+				Digit1 = temp*1000;
+				count = 2;
+			}
+			else if (count == 2)
+			{
+				Write_Char_LCD(temp+0x30);
+				Digit2 = temp*100;
+				count = 3;
+			}
+			else if (count == 3)
+			{
+				Write_Char_LCD(temp+0x30);
+				Digit3 = temp*10;
+				count = 4;
+			}
+			else if (count == 4)
+			{
+				Write_Char_LCD(temp+0x30);
+				Digit4 = temp;
+				Delay(500);
+				user_Num = Digit1 + Digit2 + Digit3 + Digit4;
+			}
+			
+		}
+		
+		if(user_Num == 0)				// will no accpet 0000 as a input pin 
+		{
+			Write_Instr_LCD(0x01);
+			char* line;
+			line = "Please Try Again";
+			Write_String_LCD(line);
+			Delay(2000);
+			break;
+		}
+			
+			
+		else if(user_Num > 0)
+		{	
+			input = Digit1 + Digit2 + Digit3 + Digit4;
+			Enter(input);
+			count = 1;
+			end = 1;
+		}
+	}
+}
+
+/****************************************************************************
+    Title:          Enter()
+  	Parameters:     return - void   arguments - the user's input
+	Purpose:        This function is takes what the user inputs and directs
+                    the user to the approitate location depending on the input
+                    typed into the keyboard. This Function takes care of
+                    the comparison of the user input passcode with the master 
+                    and correct passcode.
+****************************************************************************/
+void Enter(int comp)
+{
+	int end;
+	end = 0;
+	master = 2665;
+	while (comp == master && end == 0) // While loop for when the master pin is entered the user can 1. See all the pins, 2. Delete pins,
+	{ // 3. Delete all the pins, 4. Add pins
+		Write_Instr_LCD(0x01);
+		char* line1;
+		line1 = "1.Pins 2.Delete";
+		Write_String_LCD(line1);
+		char* line2;
+		line2 ="3.Del All 4.Add";
+		Write_Instr_LCD(0xc0);
+		Write_String_LCD(line2);
+		uint8_t temp;
+		temp = 0;
+		temp = Read_Keypad();
+
+		if (temp == 1) // User selected to see all the pins that can open the lock
+		{
+			char* space;
+			space = " ";
+			int p1 =0;
+			int p2 =0;
+			int p3 =0;
+			int p4 =0;
+			int num =0;
+			Write_Instr_LCD(0x01);
+			p1 = pin1 % 10;
+			num = pin1/10;
+			p2 = num % 10;
+			num = num/10; // Displays PIN 1
+			p3 = num % 10;
+			num = num/10;
+			p4 = num % 10;
+			Write_Char_LCD(p4+0x30);
+			Write_Char_LCD(p3+0x30);
+			Write_Char_LCD(p2+0x30);
+			Write_Char_LCD(p1+0x30);
+
+			Write_String_LCD(space);
+			p1 = pin2 % 10;
+			num = pin2/10;
+			p2 = num % 10;
+			num = num/10;
+			p3 = num % 10; // Displays PIN 2
+			num = num/10;
+			p4 = num % 10;
+			Write_Char_LCD(p4+0x30);
+			Write_Char_LCD(p3+0x30);
+			Write_Char_LCD(p2+0x30);
+			Write_Char_LCD(p1+0x30);
+
+			Write_String_LCD(space);
+			p1 = pin3 % 10;
+			num = pin3/10;
+			p2 = num % 10;
+			num = num/10;
+			p3 = num % 10; // Displays PIN 3
+			num = num/10;
+			p4 = num % 10;
+			Write_Char_LCD(p4+0x30);
+			Write_Char_LCD(p3+0x30);
+			Write_Char_LCD(p2+0x30);
+			Write_Char_LCD(p1+0x30);
+
+			Write_Instr_LCD(0xc0);
+			p1 = pin4 % 10;
+			num = pin4/10;
+			p2 = num % 10;
+			num = num/10;
+			p3 = num % 10; // Displays PIN 4
+			num = num/10;
+			p4 = num % 10;
+			Write_Char_LCD(p4+0x30);
+			Write_Char_LCD(p3+0x30);
+			Write_Char_LCD(p2+0x30);
+			Write_Char_LCD(p1+0x30);
+
+			Write_String_LCD(space);
+			p1 = pin5 % 10;
+			num = pin5/10;
+			p2 = num % 10;
+			num = num/10; // Displays PIN 5
+			p3 = num % 10;
+			num = num/10;
+			p4 = num % 10;
+			Write_Char_LCD(p4+0x30);
+			Write_Char_LCD(p3+0x30);
+			Write_Char_LCD(p2+0x30);
+			Write_Char_LCD(p1+0x30);
+
+			Write_String_LCD(space);
+			p1 = pin6 % 10;
+			num = pin6/10;
+			p2 = num % 10;
+			num = num/10;
+			p3 = num % 10; // Displays PIN 6
+			num = num/10;
+			p4 = num % 10;
+			Write_Char_LCD(p4+0x30);
+			Write_Char_LCD(p3+0x30);
+			Write_Char_LCD(p2+0x30);
+			Write_Char_LCD(p1+0x30);
+			Delay(3000);
+		}
+		else if (temp == 2) // User selected to delete a pin
+		{
+			Write_Instr_LCD(0x01);
+			char* line1;
+			line1 = "Which PIN?";
+			char* line2;
+			line2 = "1 2 3 4 5 6";
+			Write_Instr_LCD(0x01);
+			Write_String_LCD(line1); // Asks the user what pin to delete
+			Write_Instr_LCD(0xc0);
+			Write_String_LCD(line2);
+			uint8_t read;
+			read = Read_Keypad();
+
+			if (read == 1) // Deletes the selected pin
+			{
+				pin1 = 0000;
+				Write_Instr_LCD(0x01);
+				char* line1;
+				line1 = "PIN 1 Has";
+				char* line2;
+				line2 = "Been Deleted";
+				Write_Instr_LCD(0x01);
+				Write_String_LCD(line1);
+				Write_Instr_LCD(0xc0);
+				Write_String_LCD(line2);
+				Delay(2000);
+			 }
+			else if (read == 2)  // Deletes the selected pin
+			{
+				pin2 = 0000;
+				Write_Instr_LCD(0x01);
+				char* line1;
+				line1 = "PIN 2 Has";
+				char* line2;
+				line2 = "Been Deleted";
+				Write_Instr_LCD(0x01);
+				Write_String_LCD(line1);
+				Write_Instr_LCD(0xc0);
+				Write_String_LCD(line2);
+				Delay(2000);
+			}
+			else if (read == 3)  // Deletes the selected pin
+			{
+				pin3 = 0000;
+				Write_Instr_LCD(0x01);
+				char* line1;
+				line1 = "PIN 3 Has";
+				char* line2;
+				line2 = "Been Deleted";
+				Write_Instr_LCD(0x01);
+				Write_String_LCD(line1);
+				Write_Instr_LCD(0xc0);
+				Write_String_LCD(line2);
+				Delay(2000);
+			}
+			else if (read == 4)  // Deletes the selected pin
+			{
+				pin4 = 0000;
+				Write_Instr_LCD(0x01);
+				char* line1;
+				line1 = "PIN 4 Has";
+				char* line2;
+				line2 = "Been Deleted";
+				Write_Instr_LCD(0x01);
+				Write_String_LCD(line1);
+				Write_Instr_LCD(0xc0);
+				Write_String_LCD(line2);
+				Delay(2000);
+			}
+			else if (read == 5)  // Deletes the selected pin
+			{
+				pin5 = 0000;
+				Write_Instr_LCD(0x01);
+				char* line1;
+				line1 = "PIN 5 Has";
+				char* line2;
+				line2 = "Been Deleted";
+				Write_Instr_LCD(0x01);
+				Write_String_LCD(line1);
+				Write_Instr_LCD(0xc0);
+				Write_String_LCD(line2);
+				Delay(2000);
+			}
+			else if (read == 6)  // Deletes the selected pin
+			{
+				pin6 = 0000;
+				Write_Instr_LCD(0x01);
+				char* line1;
+				line1 = "PIN 6 Has";
+				char* line2;
+				line2 = "Been Deleted";
+				Write_Instr_LCD(0x01);
+				Write_String_LCD(line1);
+				Write_Instr_LCD(0xc0);
+				Write_String_LCD(line2);
+				Delay(2000);
+			}
+			else					// not a correct choice 
+			{	
+				Write_Instr_LCD(0x01);
+				line1 = "This pin number";
+				line2 = "Does not exist";
+				Write_String_LCD(line1);
+				Write_Instr_LCD(0xc0);
+				Write_String_LCD(line2);
+				Delay(2000);
+				//break;
+			}
+		}
+		else if (temp == 3) // User selected to delete all the pins and then displays the message to inform them of thier pick
+		{
+			Write_Instr_LCD(0x01);
+			char* line1;
+			line1 ="All Pins";
+			char* line2;
+			line2 ="Were Deleted";
+			Write_String_LCD(line1);
+			Write_Instr_LCD(0xC0);
+			Write_String_LCD(line2);
+			pin1 = 0000;
+			pin2 = 0000;
+			pin3 = 0000;
+			pin4 = 0000;
+			pin5 = 0000;
+			pin6 = 0000;
+			Delay(3000);
+			}
+		else if (temp == 4) // User selected to add a pin
+		{
+			Write_Instr_LCD(0x01);
+			char* line1;
+			line1 = "Which PIN?";
+			char* line2;
+			line2 = "1 2 3 4 5 6";
+			Write_Instr_LCD(0x01);
+			Write_String_LCD(line1);
+			Write_Instr_LCD(0xc0);
+			Write_String_LCD(line2);
+			int end;
+			end = 0;
+			uint8_t read;
+			read = 0;
+			read = Read_Keypad();
+
+			if (read == 1 && pin1 == 0) // Changes PIN 1
+			{
+				Write_Instr_LCD(0x01);
+				char* line1;
+				line1 = "Enter New Pin:";
+				Write_String_LCD(line1);
+				Write_Instr_LCD(0xc0);
+
+				int count;
+				count = 1;
+
+				int Digit1;
+				Digit1 = 0;
+				int Digit2;
+				Digit2 = 0;
+				int Digit3;
+				Digit3 = 0;
+				int Digit4;
+				Digit4 = 0;
+
+				while (end == 0)
+				{
+					uint8_t pin;
+					int old_pin1 = pin1;
+					pin = 0;
+					pin = Read_Keypad();
+					if(pin>=0 && pin<=9)
+					{
+						if (count == 1)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit1 = pin*1000;
+							count = 2;
+						}
+						else if (count == 2)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit2 = pin*100;
+							count = 3;
+						}
+						else if (count == 3)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit3 = pin*10;
+							count = 4;
+						}
+						else if (count == 4)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit4 = pin;
+							count = 5;
+							Delay(1000);
+						}
+						if (count == 5)
+						{
+							
+							pin1 = Digit1 + Digit2 + Digit3 + Digit4;
+							
+							if(pin1 == 0 || pin1 == master)
+							{
+								line1 = "Invalid Pin";
+								Write_Instr_LCD(0x01);
+								Write_String_LCD(line1);
+								Delay(2000);
+								pin1 = old_pin1;
+								break;
+							}
+							old_pin1 = pin1;
+							line1 ="Pin 1 has";
+							line2 ="been added";
+							Write_Instr_LCD(0x01);
+							Write_String_LCD(line1);
+							Write_Instr_LCD(0xC0);
+							Write_String_LCD(line2);
+							Delay(2000);
+							end = 1;
+							break;
+						}
+					}	
+				}
+			}
+			else if (read == 2 && pin2 == 0) // Changes PIN 2
+			{
+				Write_Instr_LCD(0x01);
+				char* line1;
+				line1 = "Enter New Pin:";
+				Write_String_LCD(line1);
+				Write_Instr_LCD(0xc0);
+
+				int count;
+				count = 1;
+
+				int Digit1;
+				Digit1 = 0;
+				int Digit2;
+				Digit2 = 0;
+				int Digit3;
+				Digit3 = 0;
+				int Digit4;
+				Digit4 = 0;
+
+				while (end == 0)
+				{
+					uint8_t pin;
+					int old_pin2 = pin2;
+					pin = 0;
+					pin = Read_Keypad();
+					if(pin>=0 && pin<=9)
+					{
+						if (count == 1)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit1 = pin*1000;
+							count = 2;
+						}
+						else if (count == 2)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit2 = pin*100;
+							count = 3;
+						}
+						else if (count == 3)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit3 = pin*10;
+							count = 4;
+						}
+						else if (count == 4)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit4 = pin;
+							count = 5;
+							Delay(1000);
+						}
+						if (count == 5)
+						{
+							
+							pin2 = Digit1 + Digit2 + Digit3 + Digit4;
+							
+							if(pin2 == 0 || pin2 == master)
+							{
+								line1 = "Invalid Pin";
+								Write_Instr_LCD(0x01);
+								Write_String_LCD(line1);
+								Delay(2000);
+								pin2 = old_pin2;
+								break;
+							}
+							old_pin2 = pin2;
+							line1 ="Pin 2 has";
+							line2 ="been added";
+							Write_Instr_LCD(0x01);
+							Write_String_LCD(line1);
+							Write_Instr_LCD(0xC0);
+							Write_String_LCD(line2);
+							Delay(2000);
+							end = 1;
+							break;
+						}
+					}	
+				}
+			}
+			else if (read == 3 && pin3 == 0) // Changes PIN 3
+			{
+				Write_Instr_LCD(0x01);
+				char* line1;
+				line1 = "Enter New Pin:";
+				Write_String_LCD(line1);
+				Write_Instr_LCD(0xc0);
+
+				int count;
+				count = 1;
+
+				int Digit1;
+				Digit1 = 0;
+				int Digit2;
+				Digit2 = 0;
+				int Digit3;
+				Digit3 = 0;
+				int Digit4;
+				Digit4 = 0;
+
+				while (end == 0)
+				{
+					uint8_t pin;
+					int old_pin3 = pin3;
+					pin = 0;
+					pin = Read_Keypad();
+					if(pin>=0 && pin<=9)
+					{
+						if (count == 1)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit1 = pin*1000;
+							count = 2;
+						}
+						else if (count == 2)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit2 = pin*100;
+							count = 3;
+						}
+						else if (count == 3)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit3 = pin*10;
+							count = 4;
+						}
+						else if (count == 4)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit4 = pin;
+							count = 5;
+							Delay(1000);
+						}
+						if (count == 5)
+						{
+							
+							pin3 = Digit1 + Digit2 + Digit3 + Digit4;
+							
+							if(pin3 == 0 || pin3 == master)
+							{
+								line1 = "Invalid Pin";
+								Write_Instr_LCD(0x01);
+								Write_String_LCD(line1);
+								Delay(2000);
+								pin3 = old_pin3;
+								break;
+							}
+							old_pin3 = pin3;
+							line1 ="Pin 3 has";
+							line2 ="been added";
+							Write_Instr_LCD(0x01);
+							Write_String_LCD(line1);
+							Write_Instr_LCD(0xC0);
+							Write_String_LCD(line2);
+							Delay(2000);
+							end = 1;
+							break;
+						}
+					}	
+				}
+			}
+			else if (read == 4 && pin4 == 0) // Changes PIN 4
+			{
+				Write_Instr_LCD(0x01);
+				char* line1;
+				line1 = "Enter New Pin:";
+				Write_String_LCD(line1);
+				Write_Instr_LCD(0xc0);
+
+				int count;
+				count = 1;
+
+				int Digit1;
+				Digit1 = 0;
+				int Digit2;
+				Digit2 = 0;
+				int Digit3;
+				Digit3 = 0;
+				int Digit4;
+				Digit4 = 0;
+
+				while (end == 0)
+				{
+					uint8_t pin;
+					int old_pin4 = pin4;
+					pin = 0;
+					pin = Read_Keypad();
+					if(pin>=0 && pin<=9)
+					{
+						if (count == 1)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit1 = pin*1000;
+							count = 2;
+						}
+						else if (count == 2)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit2 = pin*100;
+							count = 3;
+						}
+						else if (count == 3)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit3 = pin*10;
+							count = 4;
+						}
+						else if (count == 4)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit4 = pin;
+							count = 5;
+							Delay(1000);
+						}
+						if (count == 5)
+						{
+							
+							pin4 = Digit1 + Digit2 + Digit3 + Digit4;
+							
+							if(pin4 == 0 || pin4 == master)
+							{
+								line1 = "Invalid Pin";
+								Write_Instr_LCD(0x01);
+								Write_String_LCD(line1);
+								Delay(2000);
+								pin4 = old_pin4;
+								break;
+							}
+							old_pin4 = pin4;
+							line1 ="Pin 4 has";
+							line2 ="been added";
+							Write_Instr_LCD(0x01);
+							Write_String_LCD(line1);
+							Write_Instr_LCD(0xC0);
+							Write_String_LCD(line2);
+							Delay(2000);
+							end = 1;
+							break;
+						}
+					}	
+				}
+			}
+			else if (read == 5 && pin5 == 0) // Changes PIN 5
+			{
+				Write_Instr_LCD(0x01);
+				char* line1;
+				line1 = "Enter New Pin:";
+				Write_String_LCD(line1);
+				Write_Instr_LCD(0xc0);
+
+				int count;
+				count = 1;
+
+				int Digit1;
+				Digit1 = 0;
+				int Digit2;
+				Digit2 = 0;
+				int Digit3;
+				Digit3 = 0;
+				int Digit4;
+				Digit4 = 0;
+
+				while (end == 0)
+				{
+					uint8_t pin;
+					int old_pin5 = pin5;
+					pin = 0;
+					pin = Read_Keypad();
+					if(pin>=0 && pin<=9)
+					{
+						if (count == 1)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit1 = pin*1000;
+							count = 2;
+						}
+						else if (count == 2)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit2 = pin*100;
+							count = 3;
+						}
+						else if (count == 3)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit3 = pin*10;
+							count = 4;
+						}
+						else if (count == 4)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit4 = pin;
+							count = 5;
+							Delay(1000);
+						}
+						if (count == 5)
+						{
+							
+							pin5 = Digit1 + Digit2 + Digit3 + Digit4;
+							
+							if(pin5 == 0 || pin5 == master)
+							{
+								line1 = "Invalid Pin";
+								Write_Instr_LCD(0x01);
+								Write_String_LCD(line1);
+								Delay(2000);
+								pin5 = old_pin5;
+								break;
+							}
+							old_pin5 = pin5;
+							line1 ="Pin 5 has";
+							line2 ="been added";
+							Write_Instr_LCD(0x01);
+							Write_String_LCD(line1);
+							Write_Instr_LCD(0xC0);
+							Write_String_LCD(line2);
+							Delay(2000);
+							end = 1;
+							break;
+						}
+					}	
+				}
+			}
+			else if (read == 6 && pin6 == 0) // Changes PIN 6
+			{
+				Write_Instr_LCD(0x01);
+				char* line1;
+				line1 = "Enter New Pin:";
+				Write_String_LCD(line1);
+				Write_Instr_LCD(0xc0);
+
+				int count;
+				count = 1;
+
+				int Digit1;
+				Digit1 = 0;
+				int Digit2;
+				Digit2 = 0;
+				int Digit3;
+				Digit3 = 0;
+				int Digit4;
+				Digit4 = 0;
+
+				while (end == 0)
+				{
+					uint8_t pin;
+					int old_pin6 = pin6;
+					pin = 0;
+					pin = Read_Keypad();
+					if(pin>=0 && pin<=9)
+					{
+						if (count == 1)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit1 = pin*1000;
+							count = 2;
+						}
+						else if (count == 2)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit2 = pin*100;
+							count = 3;
+						}
+						else if (count == 3)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit3 = pin*10;
+							count = 4;
+						}
+						else if (count == 4)
+						{
+							Write_Char_LCD(pin+0x30);
+							Digit4 = pin;
+							count = 5;
+							Delay(1000);
+						}
+						if (count == 5)
+						{
+							
+							pin6 = Digit1 + Digit2 + Digit3 + Digit4;
+							
+							if(pin6 == 0 || pin6 == master)
+							{
+								line1 = "Invalid Pin";
+								Write_Instr_LCD(0x01);
+								Write_String_LCD(line1);
+								Delay(2000);
+								pin6 = old_pin6;
+								break;
+							}
+							old_pin6 = pin6;
+							line1 ="Pin 6 has";
+							line2 ="been added";
+							Write_Instr_LCD(0x01);
+							Write_String_LCD(line1);
+							Write_Instr_LCD(0xC0);
+							Write_String_LCD(line2);
+							Delay(2000);
+							end = 1;
+							break;
+						}
+					}	
+				}
+			}
+			else
+				{
+					Write_Instr_LCD(0x01);
+					if (read < 7 && read != 0)
+					{	
+						line1 = "Pin already";
+						line2 = "exists";
+					}
+					
+					else
+					{
+						line1 = "This pin number";
+						line2 = "Does not exist";
+					}
+					
+					Write_String_LCD(line1);
+					Write_Instr_LCD(0xC0);
+					Write_String_LCD(line2);
+					Delay(2000);
+				}
+		}
+		else //(temp >= 6 && temp <= 15) // If any button other than 0-4 is selected return to opening screen
+		{
+			end = 1;
+		}
+	}
+	if (comp == pin1 && pin1 != master) // Pin 1 was put into the system so the LED turns on and displays the message
+	{
+		Write_Instr_LCD(0x01);
+		char* line1;
+		line1 ="Correct PIN";
+		char* line2;
+		line2 ="Now Opening";
+		Write_String_LCD(line1);
+		Write_Instr_LCD(0xc0);
+		Write_String_LCD(line2);
+		Delay(200);
+		GPIOA->ODR|=(1<<12);
+		
+		Pass_7Seg();
+		
+		Clear_7Seg();
+		
+		GPIOA->ODR&=~(1<<12);
+	}
+	else if (comp == pin2 && pin2 != master) // Pin 2 was put into the system so the LED turns on and displays the message
+	{
+		Write_Instr_LCD(0x01);
+		char* line1;
+		line1 ="Correct PIN";
+		char* line2;
+		line2 ="Now Opening";
+		Write_String_LCD(line1);
+		Write_Instr_LCD(0xc0);
+		Write_String_LCD(line2);
+		Delay(200);
+		GPIOA->ODR|=(1<<12);
+		
+		Pass_7Seg();
+		
+		Clear_7Seg();
+		
+		GPIOA->ODR&=~(1<<12);
+	}
+	else if (comp == pin3 && pin3 != master) // Pin 3 was put into the system so the LED turns on and displays the message
+	{
+		Write_Instr_LCD(0x01);
+		char* line1;
+		line1 ="Correct PIN";
+		char* line2;
+		line2 ="Now Opening";
+		Write_String_LCD(line1);
+		Write_Instr_LCD(0xc0);
+		Write_String_LCD(line2);
+		Delay(200);
+		GPIOA->ODR|=(1<<12);
+		
+		Pass_7Seg();
+		
+		Clear_7Seg();
+		
+		GPIOA->ODR&=~(1<<12);
+	}
+	else if (comp == pin4 && pin4 != master) // Pin 4 was put into the system so the LED turns on and displays the message
+	{
+		Write_Instr_LCD(0x01);
+		char* line1;
+		line1 ="Correct PIN";
+		char* line2;
+		line2 ="Now Opening";
+		Write_String_LCD(line1);
+		Write_Instr_LCD(0xc0);
+		Write_String_LCD(line2);
+		Delay(200);
+		GPIOA->ODR|=(1<<12);
+		
+		Pass_7Seg();
+		
+		Clear_7Seg();
+		
+		GPIOA->ODR&=~(1<<12);
+	}
+	else if (comp == pin5 && pin5 != master) // Pin 5 was put into the system so the LED turns on and displays the message
+	{
+		Write_Instr_LCD(0x01);
+		char* line1;
+		line1 ="Correct PIN";
+		char* line2;
+		line2 ="Now Opening";
+		Write_String_LCD(line1);
+		Write_Instr_LCD(0xc0);
+		Write_String_LCD(line2);
+		Delay(200);
+		GPIOA->ODR|=(1<<12);
+		
+		Pass_7Seg();
+		
+		Clear_7Seg();
+		
+		GPIOA->ODR&=~(1<<12);
+	}
+	else if (comp == pin6 && pin6 != master) // Pin 6 was put into the system so the LED turns on and displays the message
+	{
+		Write_Instr_LCD(0x01);
+		char* line1;
+		line1 ="Correct PIN";
+		char* line2;
+		line2 ="Now Opening";
+		Write_String_LCD(line1);
+		Write_Instr_LCD(0xc0);
+		Write_String_LCD(line2);
+		Delay(200);
+		GPIOA->ODR|=(1<<12);
+		Delay(1);
+		
+		Pass_7Seg();
+		
+		Clear_7Seg();
+		
+		GPIOA->ODR&=~(1<<12);
+		
+	}
+	else if (comp != 2665) // Incorrect PIN was entered so sound the buzzer and display the message
+	{
+		Write_Instr_LCD(0x01);
+		char* line1;
+		line1 ="Incorrect PIN";
+		char* line2;
+		line2 ="Please Try Again";
+		Write_String_LCD(line1);
+		Write_Instr_LCD(0xc0);
+		Write_String_LCD(line2);
+		Delay(200);
+		
+		Fail_7Seg();
+		
+		Clear_7Seg();
+		
+	}
+}
+
+/****************************************************************************
+    Title:          Init_LED0()
+  	Parameters:     return - void   argurments - none
+	Purpose:        This function initializes the LED0.
+****************************************************************************/
+void Init_LED0()
+{
+	uint32_t temp;
+	RCC->IOPENR|=0x00000001; /* enable GPIOA clock */ /* equivalent to *((uint32_t *) 0x4002102C) |= 0x00000001; */
+
+	temp = GPIOA->MODER; /*equivalent to temp = *((uint32_t *) 0x50000000) ;*/
+	temp &= ~(0x03<<(2*12));
+	temp|=(0x01<<(2*12));
+	GPIOA->MODER = temp;
+
+
+	temp=GPIOA->OTYPER; /*equivalent to temp = *((uint32_t *) 0x50000004) ;*/
+	temp &=~(0x01<<12);
+	GPIOA->OTYPER=temp;
+
+
+	temp=GPIOA->PUPDR; /*equivalent to temp = *((uint32_t *) 0x5000000C) ;*/
+	temp&=~(0x03<<(2*12));
+	GPIOA->PUPDR=temp;
+}
+
+/****************************************************************************
+    Title:          Init_buzzer()
+  	Parameters:     return - void   argurments - none
+	Purpose:        This function intitializes the buzzer that is used when 
+                    the wrong password is used.
+****************************************************************************/
+void Init_buzzer()
+{
+	uint32_t temp;
+	RCC->IOPENR|=0x00000001; /* enable GPIOA clock */
+
+	temp = GPIOA->MODER;
+    temp &= ~(0x03<<(2*8));
+	temp|=(0x01<<(2*8));
+	GPIOA->MODER = temp;
+
+	temp=GPIOA->OTYPER;
+	temp &=~(0x01<<8);
+	GPIOA->OTYPER=temp;
+
+	temp=GPIOA->PUPDR;
+	temp&=~(0x03<<(2*8));
+	GPIOA->PUPDR=temp;
+}
+
+/****************************************************************************
+    Title:          Read_Keypad()
+  	Parameters:     return - void   argurments - none
+	Purpose:        This function has a few while loops to wait to detect
+                    when a button is pressed which would break the loops.
+****************************************************************************/
+uint8_t Read_Keypad()
+{
+
+    /* All colomns are zeros col0 PA0 - col1 PA9 - col2 PA10 col3 PB4*/
+    uint8_t a;//
+
+
+    /*set all colomns high and wait until a putton is pressed*/
+
+    GPIOB->ODR|=(1<<4);
+    Delay(2);
+    GPIOA->ODR|=(1<<0);
+    Delay(2);
+    GPIOA->ODR|=(1<<9);
+    Delay(2);
+    GPIOA->ODR|=(1<<10);
+    Delay(2);
+
+    while((GPIOA->IDR &(0x1<<6))==0 && (GPIOA->IDR &(0x1<<5))==0 && (GPIOA->IDR &(0x1<<4))==0 && (GPIOA->IDR &(0x1<<3))==0)
+    {}
+    Delay(25); /*debouncing*/
+
+    /*scanning */
+
+    while(1)
+    {
+
+	    GPIOB->ODR&=~(1<<4);
+	    Delay(2);
+	    GPIOA->ODR&=~(1<<0);
+	    Delay(2);
+	    GPIOA->ODR&=~(1<<9);
+	    Delay(2);
+	    GPIOA->ODR&=~(1<<10);
+	    Delay(2);
+        
+        /* Scan Col 0 */
+        /* All colomns are zeros col0 PA0 - col1 PA9 - col2 PA10 col3 PB4*/
+        GPIOA->ODR|=(1<<0);
+        Delay(2);
+
+
+        /* check rows row0 PA6 - row1 PA5 - row2 PA4 row3 PA3 all of them output */
+    	if((GPIOA->IDR &(0x1<<6))!=0)
+    	{
+	    	a=1;
+	    	break;
+	    }
+	    if((GPIOA->IDR &(0x1<<5))!=0)
+	    {
+		    a=4;
+		    break;
+	    }
+	    if((GPIOA->IDR &(0x1<<4))!=0)
+	    {
+	    	a=7;
+	    	break;
+	    }
+	    if((GPIOA->IDR &(0x1<<3))!=0)
+	    {
+		    a=14;
+		    break;
+	    }
+
+        /* Scan Col 1 */ /* All colomns are zeros col0 PA0 - col1 PA9 - col2 PA10 col3 PB4*/
+	    GPIOA->ODR&=~(1<<0);
+	    Delay(2);
+	    GPIOA->ODR|=(1<<9);
+	    Delay(2);
+
+    	if((GPIOA->IDR &(0x1<<6))!=0)
+	    {
+		    a=2;
+	    	break;
+	    }
+	    if((GPIOA->IDR &(0x1<<5))!=0)
+        {
+		    a=5;
+		    break;
+	    }
+	    if((GPIOA->IDR &(0x1<<4))!=0)
+	    {
+		    a=8;
+		    break;
+	    }
+	    if((GPIOA->IDR &(0x1<<3))!=0)
+	    {
+		    a=0;
+		    break;
+	    }
+
+        /* Scan Col 2 */ /* All colomns are zeros col0 PA0 - col1 PA9 - col2 PA10 col3 PB4*/
+
+	    GPIOA->ODR&=~(1<<9);
+	    Delay(2);
+	    GPIOA->ODR|=(1<<10);
+	    Delay(2);
+
+	    if((GPIOA->IDR &(0x1<<6))!=0)
+	    {
+	    	a=3;
+	    	break;
+	    }
+	    if((GPIOA->IDR &(0x1<<5))!=0)
+	    {	a=6;
+	    	break;
+	    }
+	    if((GPIOA->IDR &(0x1<<4))!=0)
+	    {	a=9;
+	    	break;
+	    }
+	    if((GPIOA->IDR &(0x1<<3))!=0)
+	    {
+	    	a=15;
+	    	break;
+	    }
+
+        /* Scan Col 3 */ /* All colomns are zeros col0 PA0 - col1 PA9 - col2 PA10 col3 PB4*/
+	    GPIOA->ODR&=~(1<<10);
+	    Delay(2);
+	    GPIOB->ODR|=(1<<4);
+	    Delay(2);
+
+	    if((GPIOA->IDR &(0x1<<6))!=0)
+	    {
+	    	a=10;
+	    	break;
+	    }
+	    if((GPIOA->IDR &(0x1<<5))!=0)
+	    {
+	    	a=11;
+	    	break;
+	    }
+	    if((GPIOA->IDR &(0x1<<4))!=0)
+	    {
+	    	a=12;
+	    	break;
+	    }
+	    if((GPIOA->IDR &(0x1<<3))!=0)
+	    {
+		    a=13;
+	    	break;
+	    }
+    }
+
+    /*wait until button is released*/
+	GPIOB->ODR|=(1<<4);
+	Delay(2);
+	GPIOA->ODR|=(1<<0);
+	Delay(2);
+	GPIOA->ODR|=(1<<9);
+	Delay(2);
+	GPIOA->ODR|=(1<<10);
+	Delay(2);
+
+    while(!( ((GPIOA->IDR &(0x1<<6))==0) && ((GPIOA->IDR &(0x1<<5))==0) && ((GPIOA->IDR &(0x1<<4))==0) && ((GPIOA->IDR &(0x1<<3))==0) ))
+    {}
+
+	Delay(25); /*debouncing*/
+	return(a);
+}
+
+/****************************************************************************
+    Title:          Keypad_Init()
+  	Parameters:     return - void   argurments - none
+	Purpose:        This function initializes the keypad that the user will 
+                    use to input potential passwords or the master code.
+****************************************************************************/
+void Keypad_Init()
+{
+	uint32_t temp;
+	RCC->IOPENR|=0x00000001; /* enable GPIOA clock */
+	RCC->IOPENR|=0x00000002; /* enable GPIOB clock */
+
+ /* row0 PA6 - row1 PA5 - row2 PA4 - row3 PA3 all of them are input pins */
+    
+    //
+	temp = GPIOA->MODER;
+	temp &= ~(0x03<<(2*6));
+	temp &= ~(0x03<<(2*5));
+	temp &= ~(0x03<<(2*3));
+	temp &= ~(0x03<<(2*4));
+	GPIOA->MODER = temp;
+
+    //
+	temp=GPIOA->OTYPER;
+	temp &=~(0x01<<3);
+	temp &=~(0x01<<4);
+	temp &=~(0x01<<5);
+	temp &=~(0x01<<6);
+	GPIOA->OTYPER=temp;
+
+    //
+	temp=GPIOA->PUPDR;
+	temp&=~(0x03<<(2*3));
+	temp&=~(0x03<<(2*4));
+	temp&=~(0x03<<(2*5));
+	temp&=~(0x03<<(2*6));
+	GPIOA->PUPDR=temp;
+
+
+ /* col0 PA0 - col1 PA9 - col2 PA10 col3 PB4 all of them are output*/
+
+    //
+	temp = GPIOA->MODER;
+	temp &= ~(0x03<<(2*0));
+	temp|=(0x01<<(2*0));
+	temp &= ~(0x03<<(2*9));
+	temp|=(0x01<<(2*9));
+	temp &= ~(0x03<<(2*10));
+	temp|=(0x01<<(2*10));
+	GPIOA->MODER = temp;
+
+    //
+	temp = GPIOB->MODER;
+	temp &= ~(0x03<<(2*4));
+	temp|=(0x01<<(2*4));
+	GPIOB->MODER = temp;
+
+    //
+	temp=GPIOA->OTYPER;
+	temp &=~(0x01<<0);
+	temp &=~(0x01<<9);
+	temp &=~(0x01<<10);
+	GPIOA->OTYPER=temp;
+
+    //
+	temp=GPIOB->OTYPER;
+	temp &=~(0x01<<4);
+	GPIOB->OTYPER=temp;
+
+    //
+	temp=GPIOA->PUPDR;
+	temp&=~(0x03<<(2*0));
+	temp&=~(0x03<<(2*9));
+	temp&=~(0x03<<(2*10));
+	GPIOA->PUPDR=temp;
+
+    //
+	temp=GPIOB->PUPDR;
+	temp&=~(0x03<<(2*4));
+	GPIOB->PUPDR=temp;
+}
+
+/****************************************************************************
+    Title:          LCD_Init()
+  	Parameters:     return - void   argurments - none
+	Purpose:        This function initialiazes the LCD in the order in which
+                    the manufacturer dictates. 
+****************************************************************************/
+void LCD_Init()
+{
+	uint32_t temp;
+
+	RCC->IOPENR|=0x00000001; /* enable GPIOA clock */
+	RCC->IOPENR|=0x00000002; /* enable GPIOB clock */
+
+    //
+	temp = GPIOA->MODER;
+	temp &= ~(0x03<<(2*11));
+	temp|=(0x01<<(2*11));
+	GPIOA->MODER = temp;
+
+    //
+	temp=GPIOA->OTYPER;
+	temp &=~(0x01<<11);
+	GPIOA->OTYPER=temp;
+
+    //
+	temp=GPIOA->PUPDR;
+	temp&=~(0x03<<(2*11));
+	GPIOA->PUPDR=temp;
+
+    //
+	temp = GPIOB->MODER;
+	temp &= ~(0x03<<(2*5));
+	temp|=(0x01<<(2*5));
+	temp &= ~(0x03<<(2*3));
+	temp|=(0x01<<(2*3));
+	GPIOB->MODER = temp;
+
+    //
+	temp=GPIOB->OTYPER;
+	temp &=~(0x01<<5);
+	temp &=~(0x01<<3);
+	GPIOB->OTYPER=temp;
+
+    //
+	temp=GPIOB->PUPDR;
+	temp&=~(0x03<<(2*5));
+	temp&=~(0x03<<(2*3));
+	GPIOB->PUPDR=temp;
+
+
+ /* LCD controller reset sequence */
+	Delay(20);
+	LCD_nibble_write(0x30,0);
+	Delay(5);
+	LCD_nibble_write(0x30,0);
+	Delay(1);
+	LCD_nibble_write(0x30,0);
+	Delay(1);
+	LCD_nibble_write(0x20,0);
+	Delay(1);
+
+
+	Write_Instr_LCD(0x28); /* set 4 bit data LCD - two line display - 5x8 font*/
+	Write_Instr_LCD(0x0E); /* ;turn on display, turn on cursor , turn off blinking */
+	Write_Instr_LCD(0x01); /* clear display screen and return to home position */
+	Write_Instr_LCD(0x06); /* ;move cursor to right (entry mode set instruction) */
+
+}
+
+/****************************************************************************
+    Title:          LCD_nibble_write()
+  	Parameters:     return - void   argurments - the data & its specifier
+	Purpose:        This function takes in the data and filters it to the
+                    LCD while it is treated different depending on what kind
+                    of data it is. 
+****************************************************************************/
+void LCD_nibble_write(uint8_t temp, uint8_t s)
+{
+	if (s==0) /*writing instruction*/
+	{
+		temp=temp&0xF0;
+		temp=temp|0x02; /*RS=1 (bit 0) for data EN=high (bit1)*/
+		Write_SR_LCD(temp);
+		temp=temp&0xFD; /*RS=1 (bit 0) for data EN=high (bit1)*/
+		Write_SR_LCD(temp);
+	}
+
+	else if (s==1) /*writing data*/
+	{
+		temp=temp&0xF0;
+		temp=temp|0x03; /*RS=1 (bit 0) for data EN=high (bit1)*/
+		Write_SR_LCD(temp);
+		temp=temp&0xFD; /*RS=1 (bit 0) for data EN=high (bit1)*/
+		Write_SR_LCD(temp);
+	}
+}
+
+/****************************************************************************
+    Title:          Write_String_LCD()
+  	Parameters:     return - void   argurments - the character array 
+	Purpose:        This function iterates through each charcter and sends 
+                    each individually to be written to the LCD.
+****************************************************************************/
+void Write_String_LCD(char *temp)
+{
+	int i=0;
+	while(temp[i]!=0)
+	{
+		Write_Char_LCD(temp[i]);
+		i=i+1;
+	}
+}
+
+/*****************************************************************************
+    Title:          Write_Instr_LCD()
+  	Parameters:     return - void   arguments - code that will direct the LCD
+	Purpose:        This function writes to the LCD_nibble_write function
+                    twice. Once to send the first four bits and then writes 
+                    the next four bits to the LCD. 
+****************************************************************************/
+void Write_Instr_LCD(uint8_t code)
+{
+	LCD_nibble_write(code&0xF0,0);
+
+	code=code<<4;
+	LCD_nibble_write(code,0);
+}
+
+/****************************************************************************
+    Title:          Write_Char_LCD()
+  	Parameters:     return - void   arguments - code that will direct the LCD
+	Purpose:	    This function writes to the LCD_nibble_write function
+                    twice. Once to send the first four bits and then writes 
+                    the next four bits to the LCD. 
+****************************************************************************/
+void Write_Char_LCD(uint8_t code)
+{
+	LCD_nibble_write(code&0xF0,1);
+
+	code=code<<4;
+	LCD_nibble_write(code,1);
+}
+
+/****************************************************************************
+    Title:          Write_SR_LCD()
+  	Parameters:     return - void   argurments - none
+	Purpose:        This function sends the data to the LCD and then
+                    simultaneously sends all of them once the latch is enabled.
+****************************************************************************/
+void Write_SR_LCD(uint8_t temp)
+{
+	int i;
+	uint8_t mask=0b10000000;
+
+	for(i=0; i<8; i++)
+	{
+		if((temp&mask)==0)
+			GPIOB->ODR&=~(1<<5);
+		else
+			GPIOB->ODR|=(1<<5);
+
+	    /* Sclck */
+	    GPIOB->ODR&=~(1<<3);
+	    GPIOB->ODR|=(1<<3);
+	    Delay(1);
+
+	    mask=mask>>1;
+    }
+
+    /*Latch*/
+	GPIOA->ODR|=(1<<11);
+	GPIOA->ODR&=~(1<<11);
+
+}
+
+/****************************************************************************
+    Title:          Init_7Seg()
+  	Parameters:     return - void   argurments - none
+	Purpose:        This function initialiazes the 7 segment allowing writing
+                    to the LCD.
+****************************************************************************/
+void Init_7Seg()	
+{	    		
+			/*PB5 MOSI, PA7 /CS_7 latch , PB_3 shift clock */  
+	uint32_t temp;		
+	
+	    RCC->IOPENR|=0x00000001;  /* enable GPIOA clock */
+			RCC->IOPENR|=0x00000002;  /* enable GPIOB clock */
+			
+	     	 
+			 
+			 	 temp = GPIOA->MODER;
+			 temp &= ~(0x03<<(2*7));
+			 temp|=(0x01<<(2*7));
+			 GPIOA->MODER = temp; 
+			 
+			 temp=GPIOA->OTYPER;
+	temp &=~(0x01<<7);
+	GPIOA->OTYPER=temp;
+	
+	
+	temp=GPIOA->PUPDR;
+	temp&=~(0x03<<(2*7));
+	GPIOA->PUPDR=temp;
+
+	
+			 	 temp = GPIOB->MODER;
+			 temp &= ~(0x03<<(2*5));
+			 temp|=(0x01<<(2*5));
+			 GPIOB->MODER = temp; 
+			 
+			 temp=GPIOB->OTYPER;
+	temp &=~(0x01<<5);
+	GPIOB->OTYPER=temp;
+	
+	
+	temp=GPIOB->PUPDR;
+	temp&=~(0x03<<(2*5));
+	GPIOB->PUPDR=temp;
+	
+	
+	
+		 
+				 	 temp = GPIOB->MODER;
+			 temp &= ~(0x03<<(2*3));
+			 temp|=(0x01<<(2*3));
+			 GPIOB->MODER = temp; 
+			 
+			 temp=GPIOB->OTYPER;
+	temp &=~(0x01<<3);
+	GPIOB->OTYPER=temp;
+	
+	
+	temp=GPIOB->PUPDR;
+	temp&=~(0x03<<(2*3));
+	GPIOB->PUPDR=temp;
+}
+
+/************************************************************************************
+    Title:          Write_7Seg()
+  	Parameters:     return - void   argurments - enable and the digit to be displayed
+	Purpose:        This function is used to define the 7-segement output displayed 
+                    based on the input temp_Digit and selects the corresponding 
+                    display based on the temp_Enable value.
+*************************************************************************************/
+void Write_7Seg(uint8_t temp_Enable, uint8_t temp_Digit)
+{
+	uint8_t Enable[5] = {0x00, 0x08, 0x04, 0x02, 0x01}; /* common anode use 1 to enable a segment and zeros to light the segments */
+		 uint8_t Digit[10]= {0xF7, 0x88, 0x92, 0x8E, 0xCF, 0xC7, 0x8C, 0xFF, 0x80, 0x90}; /* common cathode uses a 0 to illuminate one segment*/
+	Write_SR_7S(Enable[temp_Enable], Digit[temp_Digit]);
+}	
+
+/****************************************************************************
+    Title:          Write_SR_7S()
+  	Parameters:     return - void   argurments - the enable & digit to display
+	Purpose:        This program sends the data for the digit serially since
+                    the pins needed to send it in parallel do not exist on 
+                    this processor.
+****************************************************************************/
+void Write_SR_7S(uint8_t temp_Enable, uint8_t temp_Digit)
+{
+    int i;
+    uint8_t mask=0b10000000;
+	
+    for(i=0; i<8; i++)	
+    {
+	    if((temp_Digit&mask)==0)
+	    	GPIOB->ODR&=~(1<<5);
+		else
+		    GPIOB->ODR|=(1<<5);
+	
+	    /*  Sclck */
+	    GPIOB->ODR&=~(1<<3);
+	    GPIOB->ODR|=(1<<3);	
+        mask=mask>>1;	
+    }	
+	
+	mask=0b10000000;
+	
+    for(i=0; i<8; i++)	
+    {
+	    if((temp_Enable&mask)==0)
+		    GPIOB->ODR&=~(1<<5);
+		else
+		    GPIOB->ODR|=(1<<5);
+	
+	    /*  Sclck */
+	    GPIOB->ODR&=~(1<<3);
+    	GPIOB->ODR|=(1<<3);	
+
+        mask=mask>>1;	
+    }	
+	
+    /*Latch*/
+	GPIOA->ODR|=(1<<7);	
+	GPIOA->ODR&=~(1<<7);	
+}
+
+/****************************************************************************
+    Title:          Clear_7Seg()
+  	Parameters:     return - void   argurments - none
+	Purpose:        This function is used to clear the 7-segment displays.
+****************************************************************************/
+void Clear_7Seg()
+{
+	int Seg_Digit1 = 7;
+	int Seg_Digit2 = 7;
+	int Seg_Digit3 = 7;
+	int Seg_Digit4 = 7;
+	
+	Write_7Seg(1, Seg_Digit4);
+	Delay(1);
+	Write_7Seg(2, Seg_Digit3);
+	Delay(1);
+	Write_7Seg(3, Seg_Digit2);
+	Delay(1);
+	Write_7Seg(4, Seg_Digit1);
+	Delay(1);
+}
+
+/****************************************************************************
+    Title:          Pass_7Seg()
+  	Parameters:     return - void   argurments - none
+	Purpose:        This function is used to inform the user that a correct
+                    password has been inputted by displaying "PASS" on the 
+                    7-segment displays.
+****************************************************************************/
+void Pass_7Seg()
+{
+	Seg_Digit1 = 2;
+	Seg_Digit2 = 2;
+	Seg_Digit3 = 1;
+	Seg_Digit4 = 6;
+		
+	for(int i = 0; i < 1776; i++) // Patriotic time delay
+	{
+		Write_7Seg(1, Seg_Digit4);
+		Delay(1);
+		Write_7Seg(2, Seg_Digit3);
+		Delay(1);
+		Write_7Seg(3, Seg_Digit2);
+		Delay(1);
+		Write_7Seg(4, Seg_Digit1);
+		Delay(1);
+	}
+}
+
+/****************************************************************************
+    Title:          Fail_7Seg()
+  	Parameters:     return - void   argurments - none
+	Purpose:        This function is used to inform the user that an incorrect
+                    password has been inputted by displaying "FAIL" on the
+                    7-segment displays while alternating with a wavering tone
+                    from the on-board speaker.
+****************************************************************************/
+void Fail_7Seg()
+{
+	Seg_Digit1 = 5;
+	Seg_Digit2 = 4;
+	Seg_Digit3 = 1;
+	Seg_Digit4 = 3;
+		
+	int diff = 0;
+	for (int i = 0; i < 1600; i++)
+	{
+		
+		diff = i % 200;
+		
+		if(diff < 50 || diff > 100 && diff < 150)
+		{
+			Write_7Seg(1, Seg_Digit4);
+			Delay(1);
+			Write_7Seg(2, Seg_Digit3);
+			Delay(1);
+			Write_7Seg(3, Seg_Digit2);
+			Delay(1);
+			Write_7Seg(4, Seg_Digit1);
+			Delay(1);
+		}
+		
+		else
+		{
+			Clear_7Seg();
+			GPIOA->ODR|=(1<<8);
+			Delay(1);
+			GPIOA->ODR&=~(1<<8);
+		}
+	}
+}
+
+/****************************************************************************
+    Title:          Delay()                                            
+  	Parameters:     return type - void  argument - the amount of delay
+	Purpose:        This function delays for an amount time equal to the
+                    argument in milliseconds.
+****************************************************************************/
+void Delay(unsigned int n)
+{
+	int i;
+	if(n!=0)
+	{
+		for (; n > 0; n--)
+			for (i = 0; i < 136; i++) ;
+	}
+}
+
+/**
+* @brief System Clock Configuration
+* @retval None
+*/
+
+/****************************************************************************
+    Title:  	    SystemClock_Config()                                      
+  	Parameters:     return type - void  argument - void                                          
+	Purpose:	    This function initializes the clock.
+****************************************************************************/
+void SystemClock_Config(void)
+{
+	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+	RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+
+	/** Configure the main internal regulator output voltage
+	*/
+	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+
+	/** Initializes the RCC Oscillators according to the specified parameters
+	* in the RCC_OscInitTypeDef structure.
+	*/
+	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
+	RCC_OscInitStruct.MSIState = RCC_MSI_ON;
+	RCC_OscInitStruct.MSICalibrationValue = 0;
+	RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_5;
+	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+	
+	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	/** Initializes the CPU, AHB and APB buses clocks
+	*/
+	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK|RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
+	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+
+	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+	{
+		Error_Handler();
+	}
+}
+
+/****************************************************************************
+    Title:          Error_Handler()                                 
+  	Parameters:     return type - void  argument - void                                    
+	Purpose:        Disables interrupt request.
+****************************************************************************/
+void Error_Handler(void)
+{
+	__disable_irq();
+	while (1)
+	{}
+}
+
+#ifdef USE_FULL_ASSERT
+	/**
+	* @brief Reports the name of the source file and the source line number
+	* where the assert_param error has occurred.
+	* @param file: pointer to the source file name
+	* @param line: assert_param error line source number
+	* @retval None
+   */
+
+#endif
