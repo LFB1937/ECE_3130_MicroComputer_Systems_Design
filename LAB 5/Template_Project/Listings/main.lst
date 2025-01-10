@@ -1,0 +1,108 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000                 AREA             myData1, DATA, READWRITE ; your
+                                                             variables and arra
+                                                            ys are defined here
+                                                             
+    2 00000000 00000001 
+                       Number7 DCD              0x00000001  ; Define a memory w
+                                                            ord variable called
+                                                             Number8 and initia
+                                                            lize it with 80.
+    3 00000004         
+    4 00000004                 AREA             main, CODE, READONLY
+    5 00000000                 EXPORT           __main      ; make __main visib
+                                                            le to linker
+    6 00000000                 ENTRY
+    7 00000000         
+    8 00000000         ; your code is written here  
+    9 00000000         
+   10 00000000         __main  PROC
+   11 00000000         ; main function 
+   12 00000000 4803            LDR              r0, =Number7 ; loads Number8 in
+                                                            to r0
+   13 00000002 6800            LDR              r0, [r0]    ; load the actual c
+                                                            ontents of Number8 
+                                                            into ro
+   14 00000004 EA4F 00C0       LSL              r0, #3      ; Multiplies the nu
+                                                            mber by 8 
+   15 00000008 F100 0002       ADD              r0, #2      ; Then adds 2 to th
+                                                            e number
+   16 0000000C         
+   17 0000000C E7FE    stop    B                stop        ; dead loop & progr
+                                                            am hangs here
+   18 0000000E                 ENDP
+   19 0000000E         
+   20 0000000E         ; if you have more functions put them here  
+   21 0000000E         
+   22 0000000E                 END
+              00 00 00000000 
+Command Line: --debug --xref --diag_suppress=9931,A1950W --cpu=Cortex-M4.fp.sp 
+--depend=.\objects\main.d -o.\objects\main.o -I.\RTE\_Target_1 -I"E:\Tennesse T
+ech Course Materials\ECE 3130 MicroComputer Systems\LAB Assignments\MDK softwar
+e\ARM\CMSIS\5.9.0\CMSIS\Core\Include" -I"E:\Tennesse Tech Course Materials\ECE 
+3130 MicroComputer Systems\LAB Assignments\MDK software\Keil\STM32L4xx_DFP\2.6.
+1\Drivers\CMSIS\Device\ST\STM32L4xx\Include" -I"E:\Tennesse Tech Course Materia
+ls\ECE 3130 MicroComputer Systems\LAB Assignments\MDK software\Keil\STM32L4xx_D
+FP\2.6.1\Device\Include" --predefine="__EVAL SETA 1" --predefine="__UVISION_VER
+SION SETA 538" --predefine="_RTE_ SETA 1" --predefine="STM32L476xx SETA 1" --pr
+edefine="_RTE_ SETA 1" --list=.\listings\main.lst main.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+Number7 00000000
+
+Symbol: Number7
+   Definitions
+      At line 2 in file main.s
+   Uses
+      At line 12 in file main.s
+Comment: Number7 used once
+myData1 00000000
+
+Symbol: myData1
+   Definitions
+      At line 1 in file main.s
+   Uses
+      None
+Comment: myData1 unused
+2 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+__main 00000000
+
+Symbol: __main
+   Definitions
+      At line 10 in file main.s
+   Uses
+      At line 5 in file main.s
+Comment: __main used once
+main 00000000
+
+Symbol: main
+   Definitions
+      At line 4 in file main.s
+   Uses
+      None
+Comment: main unused
+stop 0000000C
+
+Symbol: stop
+   Definitions
+      At line 17 in file main.s
+   Uses
+      At line 17 in file main.s
+Comment: stop used once
+3 symbols
+342 symbols in table

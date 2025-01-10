@@ -1,0 +1,25 @@
+ AREA   myData1, DATA, READWRITE  ; your variables and arrays are defined here 
+Number5 DCD 0x000007F8 ; Define a memory word variable called Number5 and initialize it with 0x000007F8
+Number6 DCD 0x00000000 ; Define a memory word variable called Number6 and initialize it with 0x00000000
+
+	AREA    main, CODE, READONLY		
+	EXPORT	__main				; make __main visible to linker
+	ENTRY			
+
+; your code is written here
+
+__main	PROC
+; main function 
+	LDR r0, =Number5 ; loads Number5 into r0
+	LDR	r1, [r0] ; load the actual contents of Number5 into r0
+	LDR r2, =Number6 ; loads Number6 into r1
+	LDR	r3, [r2] ; load the actual contents of Number6 into r1
+	RBIT r3, r1 ; Reverse the order of the bits of Number5 and store the result in Number6.
+	STR r3, [r2] ; stores the result of the reverse bit in Number6
+
+stop 	B 		stop     		; dead loop & program hangs here
+	ENDP
+							
+ ; if you have more functions put them here  
+	
+	END

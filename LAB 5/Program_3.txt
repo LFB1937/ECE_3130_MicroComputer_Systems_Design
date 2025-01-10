@@ -1,0 +1,24 @@
+ AREA   myData1, DATA, READWRITE  ; your variables and arrays are defined here 
+Number3 DCD 0x000000AF ; Define a memory word variable called Number3 and initialize it with 0x000000AF
+Number4 DCD 0x00000000 ; Define a memory word variable called Number4 and initialize it with 0x00000000
+
+	AREA    main, CODE, READONLY		
+	EXPORT	__main				; make __main visible to linker
+	ENTRY			
+
+; your code is written here  
+
+__main	PROC
+; main function 
+	LDR r0, =Number3 ; loads Number3 into r0
+	LDR	r1, [r0] ; load the actual contents of Number3 into r0
+	LDR r2, =Number4 ; loads Number4 into r1
+	LDR	r3, [r2] ; load the actual contents of Number4 into r1
+	BFI r3, r1, #5, #4 ; take bits 0-3 of Number3 and place them in bits 5-8 of Number4
+	STR r3, [r2] ; stores the final value
+stop 	B 		stop     		; dead loop & program hangs here
+	ENDP
+							
+ ; if you have more functions put them here  
+	
+	END

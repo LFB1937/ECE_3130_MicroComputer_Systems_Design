@@ -1,0 +1,21 @@
+ AREA   myData1, DATA, READWRITE  ; your variables and arrays are defined here 
+Number2  DCD 0x000000FF ; Define a memory word variable called Number2 and initialize it with 0x000000FF
+
+	AREA    main, CODE, READONLY		
+	EXPORT	__main				; make __main visible to linker
+	ENTRY			
+
+; your code is written here  
+
+__main	PROC
+; main function 
+	LDR r0, =Number2 ; loads Number2 into r0
+	LDR	r0, [r0] ; load the actual contents of Number1 into r0
+	BIC r0, r0, #0x00000007  ; clears all of the bits
+	
+stop 	B 		stop     		; dead loop & program hangs here
+	ENDP
+							
+ ; if you have more functions put them here  
+	
+	END

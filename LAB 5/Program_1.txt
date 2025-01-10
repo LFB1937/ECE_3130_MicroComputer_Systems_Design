@@ -1,0 +1,23 @@
+ AREA   myData1, DATA, READWRITE  ; your variables and arrays are defined here 
+Number1 DCD 0x0000000F ;Define a memory word variable called Number1 and initialize it with 0x0000000F
+
+	AREA    main, CODE, READONLY		
+	EXPORT	__main				; make __main visible to linker
+	ENTRY			
+
+; your code is written here  
+
+__main	PROC
+; main function 
+	LDR r0, =Number1 ; loads Number1 into r0
+	LDR	r0, [r0] ; load the actual contents of Number1 into r0
+	ORR r0, #0x80000000 ; Set bit 31 (the most significant bit) of Number1 and leave the other bits unaffected.
+	AND r0, #0xFFFFFFFE ; Clear bit 0 (the least significant bit) of Number1 and leave the other bits unaffected.
+	EOR r0, 0x00000008 ; - Toggle bit 3 of Number1 and leave the other bits unaffected.
+
+stop 	B 		stop     		; dead loop & program hangs here
+	ENDP
+							
+ ; if you have more functions put them here  
+	
+	END
