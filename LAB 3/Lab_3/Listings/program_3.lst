@@ -1,0 +1,172 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000                 AREA             myData1, DATA, READWRITE ; your
+                                                             variables and arra
+                                                            ys are defined here
+                                                             
+    2 00000000 AAAAAAAA 
+              BBBBBBBB 
+              CCCCCCCC Array1  DCD              0xAAAAAAAA, 0xBBBBBBBB, 0xCCCCC
+CCC 
+                                                            ; Initialize Array1
+                                                             with 0xAAAAAAAA, 0
+                                                            xBBBBBBBB, and 0xCC
+                                                            CCCCCC 
+    3 0000000C 00000000 
+              00000000 
+              00000000 Array2  DCD              0, 0, 0     ; initialize Array2
+                                                             with zeros
+    4 00000018         
+    5 00000018                 AREA             main, CODE, READONLY
+    6 00000000                 EXPORT           __main      ; make __main visib
+                                                            le to linker
+    7 00000000                 ENTRY
+    8 00000000         
+    9 00000000         ; Write a program to copy Array1 to Array2 using Post-In
+                       dex addressing mode  
+   10 00000000         
+   11 00000000         __main  PROC
+   12 00000000         ; main function 
+   13 00000000 4806            LDR              r0, =Array1 ;You need to use tw
+                                                            o pointers; one for
+                                                             each array, e.g., 
+                                                            r0 and r1
+   14 00000002 4907            LDR              r1, =Array2 ;You need to use tw
+                                                            o pointers; one for
+                                                             each array, e.g., 
+                                                            r0 and r1
+   15 00000004 F850 2B04       LDR              r2, [r0], #4 ;Initialize the tw
+                                                            o pointers so that 
+                                                            r0 points at the be
+                                                            ginning of Array1 a
+                                                            nd r1 points at the
+                                                             beginning of Array
+                                                            2
+   16 00000008 F841 2B04       STR              r2, [r1], #4 ;Initialize the tw
+                                                            o pointers so that 
+                                                            r0 points at the be
+                                                            ginning of Array1 a
+                                                            nd r1 points at the
+                                                             beginning of Array
+                                                            2
+   17 0000000C F850 2B04       LDR              r2, [r0], #4 ;Read a word from 
+                                                            the location pointe
+                                                            d by r0 and copy it
+                                                             in another registe
+                                                            r (e.g., r2).
+   18 00000010 F841 2B04       STR              r2, [r1], #4 ;Copy r2 to the lo
+                                                            cation pointed by r
+                                                            1 
+   19 00000014 6802            LDR              r2, [r0]    ;Update r0 and r1 t
+                                                            o point at the next
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+                                                             elements in the ar
+                                                            rays 
+   20 00000016 600A            STR              r2, [r1]
+   21 00000018         ;Repeat steps 3-5 to copy element 2 
+   22 00000018         ;Read a word from the location pointed by r0 and copy it
+                        in another register (e.g., r2).
+   23 00000018         ;Copy r2 to the location pointed by r1 
+   24 00000018         ;Update r0 and r1 to point at the next elements in the a
+                       rrays 
+   25 00000018         
+   26 00000018         
+   27 00000018         ;Repeat steps 3-5 to copy element 3
+   28 00000018         ;Read a word from the location pointed by r0 and copy it
+                        in another register (e.g., r2).
+   29 00000018         ;Copy r2 to the location pointed by r1 
+   30 00000018         ;Update r0 and r1 to point at the next elements in the a
+                       rrays 
+   31 00000018         
+   32 00000018         
+   33 00000018 E7FE    stop    B                stop        ; dead loop & progr
+                                                            am hangs here
+   34 0000001A                 ENDP
+   35 0000001A         
+   36 0000001A         ; if you have more functions put them here  
+   37 0000001A         
+   38 0000001A                 END
+              00 00 00000000 
+              00000000 
+Command Line: --debug --xref --diag_suppress=9931,A1950W --cpu=Cortex-M4.fp.sp 
+--depend=.\objects\program_3.d -o.\objects\program_3.o -I.\RTE\_Target_1 -I"E:\
+Tennesse Tech Course Materials\ECE 3130 MicroComputer Systems\LAB Assignments\M
+DK software\ARM\CMSIS\5.9.0\CMSIS\Core\Include" -I"E:\Tennesse Tech Course Mate
+rials\ECE 3130 MicroComputer Systems\LAB Assignments\MDK software\Keil\STM32L4x
+x_DFP\2.6.1\Drivers\CMSIS\Device\ST\STM32L4xx\Include" -I"E:\Tennesse Tech Cour
+se Materials\ECE 3130 MicroComputer Systems\LAB Assignments\MDK software\Keil\S
+TM32L4xx_DFP\2.6.1\Device\Include" --predefine="__EVAL SETA 1" --predefine="__U
+VISION_VERSION SETA 538" --predefine="_RTE_ SETA 1" --predefine="STM32L476xx SE
+TA 1" --predefine="_RTE_ SETA 1" --list=.\listings\program_3.lst Program_3.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+Array1 00000000
+
+Symbol: Array1
+   Definitions
+      At line 2 in file Program_3.s
+   Uses
+      At line 13 in file Program_3.s
+Comment: Array1 used once
+Array2 0000000C
+
+Symbol: Array2
+   Definitions
+      At line 3 in file Program_3.s
+   Uses
+      At line 14 in file Program_3.s
+Comment: Array2 used once
+myData1 00000000
+
+Symbol: myData1
+   Definitions
+      At line 1 in file Program_3.s
+   Uses
+      None
+Comment: myData1 unused
+3 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+__main 00000000
+
+Symbol: __main
+   Definitions
+      At line 11 in file Program_3.s
+   Uses
+      At line 6 in file Program_3.s
+Comment: __main used once
+main 00000000
+
+Symbol: main
+   Definitions
+      At line 5 in file Program_3.s
+   Uses
+      None
+Comment: main unused
+stop 00000018
+
+Symbol: stop
+   Definitions
+      At line 33 in file Program_3.s
+   Uses
+      At line 33 in file Program_3.s
+Comment: stop used once
+3 symbols
+343 symbols in table

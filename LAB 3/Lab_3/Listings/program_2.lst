@@ -1,0 +1,151 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000                 AREA             myData1, DATA, READWRITE ; your
+                                                             variables and arra
+                                                            ys are defined here
+                                                             
+    2 00000000 00000000 
+              00000000 
+              00000000 Array1  DCD              0, 0, 0     ; Define an array w
+                                                            ith three elements 
+                                                            called Array1. Each
+                                                             element is a word.
+                                                             Initialize the ele
+                                                            ments with zeros. 
+    3 0000000C         
+    4 0000000C                 AREA             main, CODE, READONLY
+    5 00000000                 EXPORT           __main      ; make __main visib
+                                                            le to linker
+    6 00000000                 ENTRY
+    7 00000000         
+    8 00000000         ; your code is written here  
+    9 00000000         
+   10 00000000         __main  PROC
+   11 00000000         ; main function 
+   12 00000000 4806            LDR              r0, =Array1 ; Copy the beginnin
+                                                            g address of the ar
+                                                            ray (the base addre
+                                                            ss) in r0 
+   13 00000002 F05F 31AA       MOVS             r1, #0xAAAAAAAA ; Copy 0xAAAAAA
+                                                            AA in r1
+   14 00000006 6001            STR              r1, [r0]    ; Copy r1 to the fi
+                                                            rst element in the 
+                                                            array using registe
+                                                            r offset mode where
+                                                             r0 is the base add
+                                                            ress and r2 is the 
+                                                            offset – You need t
+                                                            o set r2 with the p
+                                                            roper offset to be 
+                                                            for element 1.
+   15 00000008 F05F 31BB       MOVS             r1, #0xBBBBBBBB ; Repeat steps 
+                                                            2 and 3 but this ti
+                                                            me (1) copy 0xBBBBB
+                                                            BBB in r1 (2) chang
+                                                            e the offset in r2 
+                                                            to be for element 2
+                                                            .
+   16 0000000C 2204            MOVS             r2, #4      ; Repeat steps 2 an
+                                                            d 3 but this time (
+                                                            1) copy 0xBBBBBBBB 
+                                                            in r1 (2) change th
+                                                            e offset in r2 to b
+                                                            e for element 2.
+   17 0000000E 5081            STR              r1, [r0, r2] ; Repeat steps 2 a
+                                                            nd 3 but this time 
+                                                            (1) copy 0xCCCCCCCC
+                                                             in r1 (2) change t
+                                                            he offset in r2 to 
+                                                            be for element 3.
+   18 00000010 F05F 31CC       MOVS             r1, #0xCCCCCCCC ; Repeat steps 
+                                                            2 and 3 but this ti
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+                                                            me (1) copy 0xCCCCC
+                                                            CCC in r1 (2) chang
+                                                            e the offset in r2 
+                                                            to be for element 3
+                                                            .
+   19 00000014 F840 1012       STR              r1, [r0, r2, LSL #1]
+   20 00000018         
+   21 00000018 E7FE    stop    B                stop        ; dead loop & progr
+                                                            am hangs here
+   22 0000001A                 ENDP
+   23 0000001A         
+   24 0000001A         ; if you have more functions put them here  
+   25 0000001A         
+   26 0000001A                 END
+              00 00 00000000 
+Command Line: --debug --xref --diag_suppress=9931,A1950W --cpu=Cortex-M4.fp.sp 
+--depend=.\objects\program_2.d -o.\objects\program_2.o -I.\RTE\_Target_1 -I"E:\
+Tennesse Tech Course Materials\ECE 3130 MicroComputer Systems\LAB Assignments\M
+DK software\ARM\CMSIS\5.9.0\CMSIS\Core\Include" -I"E:\Tennesse Tech Course Mate
+rials\ECE 3130 MicroComputer Systems\LAB Assignments\MDK software\Keil\STM32L4x
+x_DFP\2.6.1\Drivers\CMSIS\Device\ST\STM32L4xx\Include" -I"E:\Tennesse Tech Cour
+se Materials\ECE 3130 MicroComputer Systems\LAB Assignments\MDK software\Keil\S
+TM32L4xx_DFP\2.6.1\Device\Include" --predefine="__EVAL SETA 1" --predefine="__U
+VISION_VERSION SETA 538" --predefine="_RTE_ SETA 1" --predefine="STM32L476xx SE
+TA 1" --predefine="_RTE_ SETA 1" --list=.\listings\program_2.lst Program_2.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+Array1 00000000
+
+Symbol: Array1
+   Definitions
+      At line 2 in file Program_2.s
+   Uses
+      At line 12 in file Program_2.s
+Comment: Array1 used once
+myData1 00000000
+
+Symbol: myData1
+   Definitions
+      At line 1 in file Program_2.s
+   Uses
+      None
+Comment: myData1 unused
+2 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+__main 00000000
+
+Symbol: __main
+   Definitions
+      At line 10 in file Program_2.s
+   Uses
+      At line 5 in file Program_2.s
+Comment: __main used once
+main 00000000
+
+Symbol: main
+   Definitions
+      At line 4 in file Program_2.s
+   Uses
+      None
+Comment: main unused
+stop 00000018
+
+Symbol: stop
+   Definitions
+      At line 21 in file Program_2.s
+   Uses
+      At line 21 in file Program_2.s
+Comment: stop used once
+3 symbols
+342 symbols in table
