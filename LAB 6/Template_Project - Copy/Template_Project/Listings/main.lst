@@ -1,0 +1,176 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000                 AREA             myData1, DATA, READWRITE ; your
+                                                             variables and arra
+                                                            ys are defined here
+                                                             
+    2 00000000 000000C8 
+              FFFFFFF2 
+              00000000 
+              00000000 
+              00000016 
+              00000000 
+              FFFFFF9C 
+              00000000 
+              FFFFFFB0 
+              FFFFFF4C Array   DCD              200, -14, 0, 0, 22, 0, -100, 0,
+ -80, -180 
+                                                            ;
+    3 00000028         
+    4 00000028                 AREA             main, CODE, READONLY
+    5 00000000                 EXPORT           __main      ; make __main visib
+                                                            le to linker
+    6 00000000                 ENTRY
+    7 00000000         
+    8 00000000         ; your code is written here  
+    9 00000000         
+   10 00000000         __main  PROC
+   11 00000000         ; main function 
+   12 00000000         
+   13 00000000 480B            LDR              r0, =Array  ; loads in the  Arr
+                                                            ay into r0
+   14 00000002 6801            LDR              r1, [r0]    ; loads the actual 
+                                                            memory contents int
+                                                            o r1
+   15 00000004 F04F 020A       MOV              r2, #10     ; moves 10 into r2
+   16 00000008 F04F 0300       MOV              r3, #0      ; moves 0 into r3
+   17 0000000C F04F 0400       MOV              r4, #0      ; loads 0 into r4
+   18 00000010         
+   19 00000010 E7FF            B                LOOP
+   20 00000012 F103 0301 
+                       LOOP    ADD              r3, r3, #1  ; add 1 to r3
+   21 00000016 429A            CMP              r2, r3      ; compares r2 with 
+                                                            r3
+   22 00000018 D007            BEQ              FINISHED    ; branch to finishe
+                                                            d if equal
+   23 0000001A 2900            CMP              r1, #0      ; checks to see if 
+                                                            there is nothing in
+                                                             r1
+   24 0000001C F850 1F04       LDR              r1, [r0, #4]! ; continue loadin
+                                                            g in words in the a
+                                                            rray
+   25 00000020 DB00            BLT              INCREMENT   ; branch to increme
+                                                            nt if less than
+   26 00000022 E7F6            B                LOOP        ; continues looping
+                                                            
+   27 00000024         
+   28 00000024 F104 0401 
+                       INCREMENT
+                               ADD              r4, r4, #1  ; increments r4 by 
+                                                            1
+   29 00000028 E7F3            B                LOOP        ;
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   30 0000002A         
+   31 0000002A 4625    FINISHED
+                               MOV              r5, r4      ; moves the final r
+                                                            esult into r5
+   32 0000002C         
+   33 0000002C         
+   34 0000002C E7FE    stop    B                stop        ; dead loop & progr
+                                                            am hangs here
+   35 0000002E                 ENDP
+   36 0000002E         
+   37 0000002E         ; if you have more functions put them here  
+   38 0000002E         
+   39 0000002E                 END
+              00 00 00000000 
+Command Line: --debug --xref --diag_suppress=9931,A1950W --cpu=Cortex-M4.fp.sp 
+--depend=.\objects\main.d -o.\objects\main.o -I.\RTE\_Target_1 -I"E:\Tennesse T
+ech Course Materials\ECE 3130 MicroComputer Systems\LAB Assignments\MDK softwar
+e\ARM\CMSIS\5.9.0\CMSIS\Core\Include" -I"E:\Tennesse Tech Course Materials\ECE 
+3130 MicroComputer Systems\LAB Assignments\MDK software\Keil\STM32L4xx_DFP\2.6.
+1\Drivers\CMSIS\Device\ST\STM32L4xx\Include" -I"E:\Tennesse Tech Course Materia
+ls\ECE 3130 MicroComputer Systems\LAB Assignments\MDK software\Keil\STM32L4xx_D
+FP\2.6.1\Device\Include" --predefine="__EVAL SETA 1" --predefine="__UVISION_VER
+SION SETA 538" --predefine="_RTE_ SETA 1" --predefine="STM32L476xx SETA 1" --pr
+edefine="_RTE_ SETA 1" --list=.\listings\main.lst main.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+Array 00000000
+
+Symbol: Array
+   Definitions
+      At line 2 in file main.s
+   Uses
+      At line 13 in file main.s
+Comment: Array used once
+myData1 00000000
+
+Symbol: myData1
+   Definitions
+      At line 1 in file main.s
+   Uses
+      None
+Comment: myData1 unused
+2 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+FINISHED 0000002A
+
+Symbol: FINISHED
+   Definitions
+      At line 31 in file main.s
+   Uses
+      At line 22 in file main.s
+Comment: FINISHED used once
+INCREMENT 00000024
+
+Symbol: INCREMENT
+   Definitions
+      At line 28 in file main.s
+   Uses
+      At line 25 in file main.s
+Comment: INCREMENT used once
+LOOP 00000012
+
+Symbol: LOOP
+   Definitions
+      At line 20 in file main.s
+   Uses
+      At line 19 in file main.s
+      At line 26 in file main.s
+      At line 29 in file main.s
+
+__main 00000000
+
+Symbol: __main
+   Definitions
+      At line 10 in file main.s
+   Uses
+      At line 5 in file main.s
+Comment: __main used once
+main 00000000
+
+Symbol: main
+   Definitions
+      At line 4 in file main.s
+   Uses
+      None
+Comment: main unused
+stop 0000002C
+
+Symbol: stop
+   Definitions
+      At line 34 in file main.s
+   Uses
+      At line 34 in file main.s
+Comment: stop used once
+6 symbols
+345 symbols in table

@@ -1,0 +1,109 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000                 AREA             myData1, DATA, READWRITE ; your
+                                                             variables and arra
+                                                            ys are defined here
+                                                             
+    2 00000000 00000000 
+                       sum     DCD              0           ; Allocate one word
+                                                             for sum
+    3 00000004         
+    4 00000004                 AREA             main, CODE, READONLY
+    5 00000000                 EXPORT           __main      ; make __main visib
+                                                            le to linker
+    6 00000000                 ENTRY
+    7 00000000         
+    8 00000000         ; your code is written here  
+    9 00000000         
+   10 00000000         __main  PROC
+   11 00000000         ; main function 
+   12 00000000 F07F 01DA       MOVS             r1,#0xFFFFFF25 ; r1= 0xFFFFFF25
+                                                            
+   13 00000004 3134            ADDS             r1, r1,#0x34 ; r1=r1+0x00000034
+                                                            
+   14 00000006 3111            ADDS             r1, r1,#0x11 ; r1=r1+0x00000011
+                                                            
+   15 00000008 3112            ADDS             r1, r1,#18  ; r1=r1+0x00000012
+   16 0000000A 311C            ADDS             r1, r1,#2_00011100 
+                                                            ; r1=r1+0x0000001C
+   17 0000000C         ;ADDS r1, r1,#0xFF  ; run with and without this line
+   18 0000000C         
+   19 0000000C 4801            LDR              r0,=sum     ; r0=the address of
+                                                             sum 
+   20 0000000E 6001            STR              r1,[r0]     ; sum=r1
+   21 00000010         
+   22 00000010 E7FE    stop    B                stop        ; dead loop & progr
+                                                            am hangs here
+   23 00000012                 ENDP
+   24 00000012         
+   25 00000012         ; if you have more functions put them here  
+   26 00000012         
+   27 00000012                 END
+              00 00 00000000 
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp.sp --depen
+d=.\objects\main.d -o.\objects\main.o -I.\RTE\_Target_1 -I"C:\Users\Mohamed Mah
+moud\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include" -I"C:\Users\Mo
+hamed Mahmoud\AppData\Local\Arm\Packs\Keil\STM32L4xx_DFP\2.6.1\Drivers\CMSIS\De
+vice\ST\STM32L4xx\Include" -I"C:\Users\Mohamed Mahmoud\AppData\Local\Arm\Packs\
+Keil\STM32L4xx_DFP\2.6.1\Device\Include" --predefine="__EVAL SETA 1" --predefin
+e="__UVISION_VERSION SETA 537" --predefine="_RTE_ SETA 1" --predefine="STM32L47
+6xx SETA 1" --predefine="_RTE_ SETA 1" --list=.\listings\main.lst main.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+myData1 00000000
+
+Symbol: myData1
+   Definitions
+      At line 1 in file main.s
+   Uses
+      None
+Comment: myData1 unused
+sum 00000000
+
+Symbol: sum
+   Definitions
+      At line 2 in file main.s
+   Uses
+      At line 19 in file main.s
+Comment: sum used once
+2 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+__main 00000000
+
+Symbol: __main
+   Definitions
+      At line 10 in file main.s
+   Uses
+      At line 5 in file main.s
+Comment: __main used once
+main 00000000
+
+Symbol: main
+   Definitions
+      At line 4 in file main.s
+   Uses
+      None
+Comment: main unused
+stop 00000010
+
+Symbol: stop
+   Definitions
+      At line 22 in file main.s
+   Uses
+      At line 22 in file main.s
+Comment: stop used once
+3 symbols
+342 symbols in table

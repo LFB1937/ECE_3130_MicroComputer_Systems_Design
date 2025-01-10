@@ -1,0 +1,35 @@
+ AREA   myData1, DATA, READWRITE  ; your variables and arrays are defined here 
+Number1 DCD 0xFFF00F00, 0x00000000, 0xFFFFFFFF,	0xF0000000
+
+	AREA    main, CODE, READONLY		
+	EXPORT	__main				; make __main visible to linker
+	ENTRY			
+
+; your code is written here  
+
+__main	PROC
+; main function 
+
+		LDR r0, =Number1 ; loads Number1 into r0
+		MOVS r1, #32 ; Moves 32 into r1
+		MOVS r2, #0 ; Moves 0 into r2
+		LDR r3, [r0] ;  load the actual content of Number1 into r3
+
+		B CHECK
+
+CHECK CMP r1, #0 ; compare what is now in r1 with 0
+	  BEQ STOP ; branch to STOP if equal to 0
+	  LSRS r3, #1 ; shift search left 1 space in Number1
+	  BCC NEXT ; branch to NEXT if carry is clear
+	  ADD r2, r2, #1 ; increment the count in r2
+NEXT  SUB r1, #1 ;  decrement the count in r1
+	  
+	  B CHECK ; keep looping
+	  
+
+STOP 	B 		STOP     		; dead loop & program hangs here
+	ENDP
+							
+ ; if you have more functions put them here  
+	
+	END

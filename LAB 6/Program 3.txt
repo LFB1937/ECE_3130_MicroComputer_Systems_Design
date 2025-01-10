@@ -1,0 +1,52 @@
+ AREA   myData1, DATA, READWRITE  ; your variables and arrays are defined here 
+Passwords_1 DCD 345676, 87654, 902345, 290657, 0x00000000 ;
+Passwords_2 DCD 1234, 34567, 345676, 87654, 902345, 56784, 0x00000000 ;
+input_password DCD 290657 ;
+
+	AREA    main, CODE, READONLY		
+	EXPORT	__main				; make __main visible to linker
+	ENTRY			
+
+; your code is written here  
+
+__main	PROC
+; main function 
+
+		LDR r0, =Passwords_1 ; loads Passwords_1 into r0
+		LDR r1, =Passwords_2 ; loads Passwords_2 into r1
+		LDR r2, =input_password ; loads the input password into r2
+
+		LDR r3, [r0] ; loads the actual contents of Passwords_1 into r3
+		LDR r5, [r1] ; loads the actual contents of Passwords_2 into r5
+		LDR r6, [r2] ; loads the actual contents of input password into r6
+		
+CHECK 	CMP r3, r6 ; compare the Passwords_1 with the input password
+		BEQ DONE ; branch to done if equivalent
+		CMP r3, #0 ; compares r3 with 0 -- looks for the  delimiter of the first set
+		BEQ NEXT ; branch to next if eqivalent
+		LDR r3, [r0, #4]! ; continues to load in passwords
+		B CHECK ; continues looping
+		
+DONE MOV r4, #0xFFFFFFFF ; moves 0xFFFFFFFF into r4 if DONE with the first set of passwords
+		B NEXT ; goes to next
+		
+NEXT	CMP r5, r6 ;  compare the Passwords_2 with the input password
+		BEQ FINISHED ; branch to FINISHED if equivalent
+		CMP r5, #0 ; compares r5 with 0 -- looks for the  delimiter of the second set
+		BEQ FAILED ; branch to FAILED if eqivalent
+		LDR r5, [r1, #4]! ; continues to load in passwords
+		B NEXT ; continues looping
+
+FINISHED MOV r4, #0xFFFFFFFF ; moves 0xFFFFFFFF into r4 if FINISHED with the second set of passwords
+		B STOP ; branches to stop
+
+FAILED MOV r4, #0x0 ; moves 0 into r4 if FAILED with the second set of passwords
+		B STOP ; branches to stop
+
+
+STOP 	B 		STOP     		; dead loop & program hangs here
+	ENDP
+							
+ ; if you have more functions put them here  
+	
+	END

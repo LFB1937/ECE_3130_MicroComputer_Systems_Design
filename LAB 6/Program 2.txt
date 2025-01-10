@@ -1,0 +1,47 @@
+ AREA   myData1, DATA, READWRITE  ; your variables and arrays are defined here 
+NUMBERS DCD 0x000000F0,	0x00000000,	0xFFFFFFFF,	0xF0000A00 ;
+
+	AREA    main, CODE, READONLY		
+	EXPORT	__main				; make __main visible to linker
+	ENTRY			
+
+; your code is written here  
+
+__main	PROC
+; main function 
+
+	; Part 1
+	MOV r0, #0x000000F0 ; moves 240 into the memory of r0
+	MOV r2, #0x00000010 ; moves 16 into the memory of r2
+	AND r0, r0, r2 ; adds r0 to r2
+	CMP r0, r2 ; compares r0 to r2
+	MOVEQ r1, #0xFFFFFFFF ; moves 0xFFFFFFFF if equal
+	MOVNE r1, #0x00000000 ; moves 0 if not equal
+
+	; Part 2
+	MOV r0, #0x00000000 ; moves 0 into the memory of r0 
+	AND r0, r0, r2 ; adds r0 to r2
+	CMP r0, r2 ; compares r0 to r2
+	MOVEQ r1, #0xFFFFFFFF ; moves 0xFFFFFFFF if equal
+	MOVNE r1, #0x00000000 ; moves 0 if not equal
+	
+	; Part 3	
+	MOV r0, #0xFFFFFFFF ; moves 0xFFFFFFFF into the memory of r0 
+	AND r0, r0, r2 ; adds r0 to r2
+	CMP r0, r2 ; compares r0 to r2
+	MOVEQ r1, #0xFFFFFFFF ; moves 0xFFFFFFFF if equal
+	MOVNE r1, #0x00000000 ; moves 0 if not equal
+	
+	; Part 4
+	LDR r0, =0xF0000A00 ; loads 0xF0000A00 into the memory of r0 -- there was some error with using MOV and this HEX number 
+	AND r0, r0, r2 ; adds r0 to r2
+	CMP r0, r2 ; compares r0 to r2
+	MOVEQ r1, #0xFFFFFFFF ; moves 0xFFFFFFFF if equal
+	MOVNE r1, #0x00000000 ; moves 0 if not equal
+
+stop 	B 		stop     		; dead loop & program hangs here
+	ENDP
+							
+ ; if you have more functions put them here  
+	
+	END
